@@ -7,7 +7,7 @@ class Bag(db.Model):
     inspiration = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(100), nullable=False)
-    size = db.Column(db.String(50), nullable=False)  # Added size attribute
+    # size = db.Column(db.String(50), nullable=False)  # Added size attribute
 
     def __repr__(self):
         return f'<Bag {self.name}>'
@@ -18,7 +18,7 @@ class Tshirt(db.Model):
     inspiration = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(100), nullable=False)
-    size = db.Column(db.String(50), nullable=False)  # Added size attribute
+    # size = db.Column(db.String(50), nullable=False)  # Added size attribute
 
     def __repr__(self):
         return f'<Tshirt {self.name}>'
@@ -56,3 +56,4 @@ class OrderItem(db.Model):
 
     def __repr__(self):
         return f'<OrderItem {self.product_type} ID: {self.product_id}, Qty: {self.quantity}>'
+

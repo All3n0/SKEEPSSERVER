@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from config import create_app, db
-from models import Order, OrderItem, bag, cap, tshirt
+from models import Order, OrderItem, Bag, Cap, Tshirt
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -77,15 +77,43 @@ def create_bag():
     return jsonify({"message": "Bag created successfully!", "bag_id": new_bag.id}), 201
 
 
+# @app.route('/bags', methods=['GET'])
+# def get_bags():
+#     bags = Bag.query.all()
+#     result = [
+#         {"id": b.id,"inspiration": b.inspiration,"name": b.name, "price": b.price, "image": b.image}
+#         for b in bags
+#     ]
+#     return jsonify(result)
+
 @app.route('/bags', methods=['GET'])
-def get_bags():
-    bags = bag.query.all()
+def get_inspirations():
+    inspirations = (
+        Bag.query.distinct(Bag.inspiration)
+        .group_by(Bag.inspiration)
+        .all()
+    )
     result = [
-        {"id": b.id, "name": b.name, "price": b.price, "image": b.image}
+        {
+            "inspiration": b.inspiration,
+            "image": b.image,  # Use the first image of this inspiration
+        }
+        for b in inspirations
+    ]
+    return jsonify(result)
+@app.route('/bags/inspiration/<string:inspiration>', methods=['GET'])
+def get_bags_by_inspiration(inspiration):
+    bags = Bag.query.filter_by(inspiration=inspiration).all()
+    result = [
+        {
+            "id": b.id,
+            "name": b.name,
+            "price": b.price,
+            "image": b.image,
+        }
         for b in bags
     ]
     return jsonify(result)
-
 
 @app.route('/bags/<int:bag_id>', methods=['PUT'])
 def update_bag(bag_id):
@@ -176,13 +204,35 @@ def create_tshirt():
 
 
 @app.route('/tshirts', methods=['GET'])
-def get_tshirts():
-    tshirts = tshirt.query.all()
+def get_tshirt_inspirations():
+    inspirations = (
+        Tshirt.query.distinct(Tshirt.inspiration)
+        .group_by(Tshirt.inspiration)
+        .all()
+    )
     result = [
-        {"id": t.id, "name": t.name, "price": t.price, "image": t.image}
+        {
+            "inspiration": t.inspiration,
+            "image": t.image,  # Use the first image of this inspiration
+        }
+        for t in inspirations
+    ]
+    return jsonify(result)
+
+@app.route('/tshirts/inspiration/<string:inspiration>', methods=['GET'])
+def get_tshirts_by_inspiration(inspiration):
+    tshirts = Tshirt.query.filter_by(inspiration=inspiration).all()
+    result = [
+        {
+            "id": t.id,
+            "name": t.name,
+            "price": t.price,
+            "image": t.image,
+        }
         for t in tshirts
     ]
     return jsonify(result)
+
 
 
 @app.route('/tshirts/<int:tshirt_id>', methods=['PUT'])
