@@ -64,18 +64,18 @@ def delete_order(order_id):
 
 
 # ----------------------- Bags -----------------------
-@app.route('/bags', methods=['POST'])
+@app.route('/create_bags', methods=['POST'])
 def create_bag():
     data = request.get_json()
-    new_bag = bag(
+    new_bag = Bag(
         name=data['name'],
         price=data['price'],
-        image=data['image']
+        image=data['image'],
+        inspiration=data.get('inspiration', '')  # Add a default value if 'inspiration' key is not present
     )
     db.session.add(new_bag)
     db.session.commit()
     return jsonify({"message": "Bag created successfully!", "bag_id": new_bag.id}), 201
-
 
 # @app.route('/bags', methods=['GET'])
 # def get_bags():
@@ -118,7 +118,7 @@ def get_bags_by_inspiration(inspiration):
 @app.route('/bags/<int:bag_id>', methods=['PUT'])
 def update_bag(bag_id):
     data = request.get_json()
-    bag_item = bag.query.get(bag_id)
+    bag_item = Bag.query.get(bag_id)
     if not bag_item:
         return jsonify({"error": "Bag not found"}), 404
 
@@ -131,7 +131,7 @@ def update_bag(bag_id):
 
 @app.route('/bags/<int:bag_id>', methods=['DELETE'])
 def delete_bag(bag_id):
-    bag_item = bag.query.get(bag_id)
+    bag_item = Bag.query.get(bag_id)
     if not bag_item:
         return jsonify({"error": "Bag not found"}), 404
 
@@ -144,8 +144,12 @@ def delete_bag(bag_id):
 @app.route('/caps', methods=['POST'])
 def create_cap():
     data = request.get_json()
-    new_cap = cap(
+    if 'inspiration' not in data:
+        return jsonify({"error": "Missing 'inspiration' key in request data"}), 400
+    
+    new_cap = Cap(
         name=data['name'],
+        inspiration=data['inspiration'],
         price=data['price'],
         image=data['image']
     )
@@ -156,7 +160,7 @@ def create_cap():
 
 @app.route('/caps', methods=['GET'])
 def get_caps():
-    caps = cap.query.all()
+    caps = Cap.query.all()
     result = [
         {"id": c.id, "name": c.name, "price": c.price, "image": c.image}
         for c in caps
@@ -167,7 +171,7 @@ def get_caps():
 @app.route('/caps/<int:cap_id>', methods=['PUT'])
 def update_cap(cap_id):
     data = request.get_json()
-    cap_item = cap.query.get(cap_id)
+    cap_item = Cap.query.get(cap_id)
     if not cap_item:
         return jsonify({"error": "Cap not found"}), 404
 
@@ -180,7 +184,7 @@ def update_cap(cap_id):
 
 @app.route('/caps/<int:cap_id>', methods=['DELETE'])
 def delete_cap(cap_id):
-    cap_item = cap.query.get(cap_id)
+    cap_item = Cap.query.get(cap_id)
     if not cap_item:
         return jsonify({"error": "Cap not found"}), 404
 
@@ -193,15 +197,15 @@ def delete_cap(cap_id):
 @app.route('/tshirts', methods=['POST'])
 def create_tshirt():
     data = request.get_json()
-    new_tshirt = tshirt(
+    new_tshirt = Tshirt(
         name=data['name'],
+        inspiration=data['inspiration'],  # Add this line
         price=data['price'],
         image=data['image']
     )
     db.session.add(new_tshirt)
     db.session.commit()
     return jsonify({"message": "T-Shirt created successfully!", "tshirt_id": new_tshirt.id}), 201
-
 
 @app.route('/tshirts', methods=['GET'])
 def get_tshirt_inspirations():
@@ -238,7 +242,7 @@ def get_tshirts_by_inspiration(inspiration):
 @app.route('/tshirts/<int:tshirt_id>', methods=['PUT'])
 def update_tshirt(tshirt_id):
     data = request.get_json()
-    tshirt_item = tshirt.query.get(tshirt_id)
+    tshirt_item = Tshirt.query.get(tshirt_id)
     if not tshirt_item:
         return jsonify({"error": "T-Shirt not found"}), 404
 
@@ -251,7 +255,7 @@ def update_tshirt(tshirt_id):
 
 @app.route('/tshirts/<int:tshirt_id>', methods=['DELETE'])
 def delete_tshirt(tshirt_id):
-    tshirt_item = tshirt.query.get(tshirt_id)
+    tshirt_item = Tshirt.query.get(tshirt_id)
     if not tshirt_item:
         return jsonify({"error": "T-Shirt not found"}), 404
 
