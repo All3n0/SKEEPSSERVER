@@ -8,6 +8,14 @@ class Bag(db.Model):
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(100), nullable=False)
     # size = db.Column(db.String(50), nullable=False)  # Added size attribute
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'image': self.image,
+            'inspiration': self.inspiration
+        }
 
     def __repr__(self):
         return f'<Bag {self.name}>'
@@ -19,7 +27,14 @@ class Tshirt(db.Model):
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(100), nullable=False)
     # size = db.Column(db.String(50), nullable=False)  # Added size attribute
-
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'image': self.image,
+            'inspiration': self.inspiration
+        }
     def __repr__(self):
         return f'<Tshirt {self.name}>'
 

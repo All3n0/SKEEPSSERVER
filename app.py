@@ -2,8 +2,11 @@ from flask import Flask, request, jsonify
 from config import create_app, db
 from models import Order, OrderItem, Bag, Cap, Tshirt
 from flask_cors import CORS
-
+from flask_migrate import Migrate
+# from auth.admin_auth import require_admin
 app = Flask(__name__)
+app.config['ADMIN_TOKEN'] = "secret-token-123"
+from auth.admin_auth import require_admin
 app = create_app()
 CORS(app)
 
@@ -64,18 +67,24 @@ def delete_order(order_id):
 
 
 # ----------------------- Bags -----------------------
-@app.route('/create_bags', methods=['POST'])
+@app.route('/bags', methods=['POST'])  # match the React endpoint
 def create_bag():
+    require_admin()
     data = request.get_json()
+
     new_bag = Bag(
         name=data['name'],
         price=data['price'],
         image=data['image'],
-        inspiration=data.get('inspiration', '')  # Add a default value if 'inspiration' key is not present
+        inspiration=data.get('inspiration', '')
     )
     db.session.add(new_bag)
     db.session.commit()
-    return jsonify({"message": "Bag created successfully!", "bag_id": new_bag.id}), 201
+    
+    return jsonify({
+        "message": "Bag created successfully!",
+        "bag_id": new_bag.id
+    }), 201
 
 # @app.route('/bags', methods=['GET'])
 # def get_bags():
@@ -196,6 +205,7 @@ def delete_cap(cap_id):
 # ----------------------- T-Shirts -----------------------
 @app.route('/tshirts', methods=['POST'])
 def create_tshirt():
+    require_admin()
     data = request.get_json()
     new_tshirt = Tshirt(
         name=data['name'],
@@ -262,6 +272,43 @@ def delete_tshirt(tshirt_id):
     db.session.delete(tshirt_item)
     db.session.commit()
     return jsonify({"message": "T-Shirt deleted successfully!"})
+@app.route('/all_bags', methods=['GET'])
+def get_all_bags():
+    bags = Bag.query.all()
+    return jsonify([bag.to_dict() for bag in bags]), 200
+
+@app.route('/all_tshirts', methods=['GET'])
+def get_all_tshirts():
+    tshirts = Tshirt.query.all()
+    return jsonify([tshirt.to_dict() for tshirt in tshirts]), 200
+# Flask route
+from sqlalchemy import or_
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '').lower()
+
+    bags = Bag.query.filter(
+        or_(
+            Bag.name.ilike(f'%{query}%'),
+            Bag.inspiration.ilike(f'%{query}%')
+        )
+    ).all()
+
+    tshirts = Tshirt.query.filter(
+        or_(
+            Tshirt.name.ilike(f'%{query}%'),
+            Tshirt.inspiration.ilike(f'%{query}%')
+        )
+    ).all()
+
+    return jsonify({
+        'bags': [bag.to_dict() for bag in bags],
+        'tshirts': [tshirt.to_dict() for tshirt in tshirts]
+    })
+@app.route('/')
+def index():
+    return "Yee,skeeps!"
 
 
 if __name__ == '__main__':

@@ -32,6 +32,7 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
+ADMIN_TOKEN = "secret-token-123"  # Store securely in env variables in production
 
 config = {
     'development': DevelopmentConfig,
@@ -43,7 +44,10 @@ config = {
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(DevelopmentConfig)
-
+    
+    # Set admin token here:
+    app.config['ADMIN_TOKEN'] = os.environ.get('ADMIN_TOKEN', 'secret-token-123')
+    
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
