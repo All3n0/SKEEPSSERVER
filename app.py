@@ -1,37 +1,99 @@
 from flask import Flask, request, jsonify
-from config import create_app, db
-from models import Order, OrderItem, Bag, Cap, Tshirt
 from flask_cors import CORS
 from flask_migrate import Migrate
-# from auth.admin_auth import require_admin
-app = Flask(__name__)
-app.config['ADMIN_TOKEN'] = "secret-token-123"
+from flask_mail import Mail, Message
+from config import create_app, db
+from models import Order, OrderItem, Bag, Cap, Tshirt
 from auth.admin_auth import require_admin
+
+# Create app using factory
 app = create_app()
+
+# Add Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'skeepscollection@gmail.com'
+app.config['MAIL_PASSWORD'] = 'fsdh ioze fyci lyus'  # App Password
+app.config['MAIL_DEFAULT_SENDER'] = 'skeepscollection@gmail.com'
+
+# Initialize extensions
+mail = Mail(app)
 CORS(app)
 
-# ----------------------- Orders -----------------------
+
 @app.route('/orders', methods=['POST'])
 def create_order():
     data = request.get_json()
+
+    customer_name = data.get("customer_name")
+    customer_email = data.get("customer_email")
+    instagram_handle = data.get("instagram_handle")
+    items = data.get("items")
+
+    if not (customer_name and customer_email and items):
+        return jsonify({"error": "Missing customer details or items"}), 400
+
+    # Store the Order in DB
     new_order = Order(
-        customer_name=data['customer_name'],
-        customer_email=data['customer_email']
+        customer_name=customer_name,
+        customer_email=customer_email,
+        instagram_handle=instagram_handle
     )
     db.session.add(new_order)
+    db.session.flush()  # Get order.id before commit
 
-    for item in data['items']:
+    total_price = 0
+    item_descriptions = []
+
+    for item in items:
         order_item = OrderItem(
-            order=new_order,
-            product_type=item['product_type'],
-            product_id=item['product_id'],
-            size=item.get('size'),  # Optional
-            quantity=item['quantity']
+            order_id=new_order.id,
+            product_name=item.get("product_name"),
+            product_type=item.get("product_type"),
+            quantity=item.get("quantity", 1)
         )
         db.session.add(order_item)
 
+        # Track total price and prepare description
+        try:
+            item_price = float(item.get("price", 0))
+            total_price += item_price
+        except:
+            item_price = 0  # fallback in case of bad data
+
+        item_descriptions.append(f"{item.get('product_name')} - Ksh {item_price}")
+
     db.session.commit()
-    return jsonify({"message": "Order created successfully!", "order_id": new_order.id}), 201
+
+    # Send confirmation email
+    try:
+        msg = Message("Skeeps Collection Order Confirmation",
+                      sender='skeepscollection@gmail.com',
+                      recipients=[customer_email])
+        msg.body = f"""
+        Hello {customer_name},
+
+        Thank you for placing an order with Skeeps Collection.
+
+        Instagram: @{instagram_handle or 'N/A'}
+
+        Items Ordered:
+        {chr(10).join(item_descriptions)}
+
+        Total: Ksh {total_price}
+
+        We will reach out to you shortly with payment details.
+
+        Regards,  
+        Skeeps Collection
+        """
+        mail.send(msg)
+    except Exception as e:
+        print("Email failed:", e)
+
+    return jsonify({"message": "Order created and email sent successfully"}), 201
+
 
 
 @app.route('/orders', methods=['GET'])
@@ -42,18 +104,36 @@ def get_orders():
             "order_id": order.id,
             "customer_name": order.customer_name,
             "customer_email": order.customer_email,
+            "instagram_handle": order.instagram_handle,
+            "completed": order.completed,
             "items": [
                 {
                     "product_type": item.product_type,
-                    "product_id": item.product_id,
-                    "size": item.size,
+                    "product_name": item.product_name,
                     "quantity": item.quantity
-                } for item in order.order_items
+                } for item in order.items
             ]
         } for order in orders
     ]
     return jsonify(result)
+@app.route('/orders/<int:order_id>/complete', methods=['PATCH'])
+def mark_order_complete(order_id):
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
 
+    order.completed = True
+    db.session.commit()
+    return jsonify({"message": "Order marked as complete."})
+
+@app.route('/orders/<int:order_id>/uncomplete', methods=['PATCH'])
+def unmark_order_complete(order_id):
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    order.completed = False
+    db.session.commit()
+    return jsonify({"message": "Order marked as incomplete"}), 200
 
 @app.route('/orders/<int:order_id>', methods=['DELETE'])
 def delete_order(order_id):
