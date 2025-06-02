@@ -51,7 +51,8 @@ def create_order():
             order_id=new_order.id,
             product_name=item.get("product_name"),
             product_type=item.get("product_type"),
-            quantity=item.get("quantity", 1)
+            quantity=item.get("quantity", 1),
+            price=float(item.get("price", 0))
         )
         db.session.add(order_item)
 
@@ -110,7 +111,8 @@ def get_orders():
                 {
                     "product_type": item.product_type,
                     "product_name": item.product_name,
-                    "quantity": item.quantity
+                    "quantity": item.quantity,
+                    "price": item.price
                 } for item in order.items
             ]
         } for order in orders

@@ -71,6 +71,7 @@ class OrderItem(db.Model):
     product_type = db.Column(db.String)
     product_name = db.Column(db.String)  # <- Add this if you want name
     quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
 
     def to_dict(self):
@@ -78,7 +79,8 @@ class OrderItem(db.Model):
             'id': self.id,
             'product_type': self.product_type,
             'product_name': self.product_name,
-            'quantity': self.quantity
+            'quantity': self.quantity,
+            'price': self.price
         }
 
 
