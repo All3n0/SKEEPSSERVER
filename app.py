@@ -73,22 +73,21 @@ def create_order():
                       sender='skeepscollection@gmail.com',
                       recipients=[customer_email])
         msg.body = f"""
-        Hello {customer_name},
+            Hello {customer_name},
 
-        Thank you for placing an order with Skeeps Collection.
+            Thank you for placing an order with Skeeps Collection! We’re thrilled to prepare your items and get them to you as soon as possible. Here’s a quick summary of your order:
 
-        Instagram: @{instagram_handle or 'N/A'}
+            Instagram Handle: @{instagram_handle or 'N/A'}  
+            Items Ordered:  
+            {chr(10).join(item_descriptions)}  
+            Total Amount: Ksh {total_price}
 
-        Items Ordered:
-        {chr(10).join(item_descriptions)}
+            We will be reaching out shortly through instagram with payment details and next steps. If you have any questions or would like to make adjustments to your order, feel free to reach out through our Instagram or reply directly to this message.
 
-        Total: Ksh {total_price}
+            Warm regards,  
+            Skeeps Collection
+            """
 
-        We will reach out to you shortly with payment details.
-
-        Regards,  
-        Skeeps Collection
-        """
         mail.send(msg)
     except Exception as e:
         print("Email failed:", e)
