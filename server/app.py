@@ -5,6 +5,7 @@ from flask_mail import Mail, Message
 from config import create_app, db
 from models import Order, OrderItem, Bag, Cap, Tshirt
 from auth.admin_auth import require_admin
+import os
 
 # Create app using factory
 app = create_app()
@@ -393,4 +394,5 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
