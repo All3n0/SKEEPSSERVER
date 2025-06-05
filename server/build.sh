@@ -8,3 +8,6 @@ export FLASK_APP=app.py
 
 # Run database migrations
 flask db upgrade
+
+# seeding 
+python seed.py
