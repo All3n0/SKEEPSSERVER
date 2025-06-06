@@ -291,19 +291,8 @@ def create_tshirt():
 
 @app.route('/tshirts', methods=['GET'])
 def get_tshirt_inspirations():
-    inspirations = (
-        Tshirt.query.distinct(Tshirt.inspiration)
-        .group_by(Tshirt.inspiration)
-        .all()
-    )
-    result = [
-        {
-            "inspiration": t.inspiration,
-            "image": t.image,  # Use the first image of this inspiration
-        }
-        for t in inspirations
-    ]
-    return jsonify(result)
+    tshirts = Tshirt.query.distinct(Tshirt.inspiration).order_by(Tshirt.inspiration, Tshirt.id).all()
+    return jsonify([tshirt.to_dict() for tshirt in tshirts])
 
 @app.route('/tshirts/inspiration/<string:inspiration>', methods=['GET'])
 def get_tshirts_by_inspiration(inspiration):
