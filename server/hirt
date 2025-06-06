@@ -1,0 +1,49 @@
+ id |           name            |  inspiration   | price |                                  image                                  
+----+---------------------------+----------------+-------+-------------------------------------------------------------------------
+  1 | Brent Faiyaz t-shirt 1    | Brent Faiyaz   |   950 | https://i.pinimg.com/736x/53/cf/a5/53cfa5eb6c2bb96de524c9d8d827cc06.jpg
+  2 | Brent Faiyaz t-shirt 2    | Brent Faiyaz   |   950 | https://i.pinimg.com/474x/58/e7/a3/58e7a3fa71940c6dfa8c070d8b3b6735.jpg
+  3 | Brent Faiyaz t-shirt 3    | Brent Faiyaz   |   950 | https://i.pinimg.com/474x/8e/68/03/8e6803a988c82cccb2dc2d726a802f2d.jpg
+  4 | Brent Faiyaz t-shirt 4    | Brent Faiyaz   |   950 | https://i.pinimg.com/474x/36/fd/33/36fd33ad680c79ea7f775fbca6f6a808.jpg
+  5 | Brent Faiyaz t-shirt 5    | Brent Faiyaz   |   950 | https://i.pinimg.com/474x/84/1e/d1/841ed1833b92d63db07f225d71ce25d8.jpg
+  6 | Brent Faiyaz t-shirt 6    | Brent Faiyaz   |   950 | https://i.pinimg.com/474x/4a/fb/94/4afb9452c4205c2a787e656428bf852c.jpg
+  7 | Brent Faiyaz t-shirt 7    | Brent Faiyaz   |   950 | https://i.pinimg.com/474x/ea/c1/59/eac1590e1b9ff1541e36f6cbeaeddafe.jpg
+  8 | Jcole t-shirt 1           | JCole          |   950 | https://i.pinimg.com/736x/63/32/9c/63329ced5bd2142254cdaf6e2373351e.jpg
+  9 | Drake t-shirt 1           | Drake          |   950 | 
+ 10 | Drake t-shirt 2           | Drake          |   950 | 
+ 11 | Drake t-shirt 3           | Drake          |   950 | 
+ 12 | Drake t-shirt 4           | Drake          |   950 | 
+ 13 | Drake t-shirt 5           | Drake          |   950 | 
+ 14 | Drake t-shirt 6           | Drake          |   950 | 
+ 15 | Drake t-shirt 7           | Drake          |   950 | 
+ 16 | Drake t-shirt 8           | Drake          |   950 | 
+ 17 | Kendrick Lamar t-shirt 1  | Kendrick Lamar |   950 | 
+ 18 | Kendrick Lamar t-shirt 2  | Kendrick Lamar |   950 | 
+ 19 | Kendrick Lamar t-shirt 3  | Kendrick Lamar |   950 | 
+ 20 | Kendrick Lamar t-shirt 4  | Kendrick Lamar |   950 | 
+ 21 | Kendrick Lamar t-shirt 5  | Kendrick Lamar |   950 | 
+ 22 | Kendrick Lamar t-shirt 6  | Kendrick Lamar |   950 | 
+ 23 | Kendrick Lamar t-shirt 7  | Kendrick Lamar |   950 | 
+ 24 | Kendrick Lamar t-shirt 8  | Kendrick Lamar |   950 | 
+ 25 | Kendrick Lamar t-shirt 9  | Kendrick Lamar |   950 | 
+ 26 | Kendrick Lamar t-shirt 10 | Kendrick Lamar |   950 | 
+ 27 | Kendrick Lamar t-shirt 11 | Kendrick Lamar |   950 | 
+ 28 | Kendrick Lamar t-shirt 12 | Kendrick Lamar |   950 | 
+ 29 | Kendrick Lamar t-shirt 13 | Kendrick Lamar |   950 | 
+ 30 | Kendrick Lamar t-shirt 14 | Kendrick Lamar |   950 | 
+ 31 | Kendrick Lamar t-shirt 15 | Kendrick Lamar |   950 | 
+ 32 | Kendrick Lamar t-shirt 16 | Kendrick Lamar |   950 | 
+ 33 | Kendrick Lamar t-shirt 17 | Kendrick Lamar |   950 | 
+ 34 | F1 t-shirt 1              | F1             |   950 | https://i.pinimg.com/736x/65/24/15/6524159e0e03354dd63a46299ecb7509.jpg
+ 35 | F1 t-shirt 2              | F1             |   950 | https://i.pinimg.com/736x/b2/9c/80/b29c802e704efca6598c432d5bbb9869.jpg
+ 36 | F1 t-shirt 3              | F1             |   950 | https://i.pinimg.com/736x/1f/62/c9/1f62c9fc7f11c735d0ce647485f92b25.jpg
+ 37 | F1 t-shirt 4              | F1             |   950 | https://i.pinimg.com/736x/a1/23/8e/a1238ec4c16954dc2b5ff584d20cc0f1.jpg
+ 38 | F1 t-shirt 5              | F1             |   950 | https://i.pinimg.com/736x/d5/a4/08/d5a4085397b88d0469c35d11a9e9e3fd.jpg
+ 39 | F1 t-shirt 6              | F1             |   950 | https://i.pinimg.com/736x/b2/41/bf/b241bfd3a1996958309e18f29da110c6.jpg
+ 40 | F1 t-shirt 7              | F1             |   950 | https://i.pinimg.com/736x/f6/ce/78/f6ce7804ad49ed24be0fdec7dc1eb7c0.jpg
+ 41 | Girlfriend t-shirt 1      | Girlfriend     |   950 | 
+ 42 | Girlfriend t-shirt 2      | Girlfriend     |   950 | 
+ 43 | Outerbanks t-shirt 1      | Outerbanks     |   950 | 
+ 44 | Outerbanks t-shirt 2      | Outerbanks     |   950 | 
+ 45 | Outerbanks t-shirt 3      | Outerbanks     |   950 | 
+(45 rows)
+
