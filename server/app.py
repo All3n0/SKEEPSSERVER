@@ -179,19 +179,9 @@ def create_bag():
 
 @app.route('/bags', methods=['GET'])
 def get_inspirations():
-    inspirations = (
-        Bag.query.distinct(Bag.inspiration)
-        .group_by(Bag.inspiration)
-        .all()
-    )
-    result = [
-        {
-            "inspiration": b.inspiration,
-            "image": b.image,  # Use the first image of this inspiration
-        }
-        for b in inspirations
-    ]
-    return jsonify(result)
+    bags = db.session.query(Bag).distinct(Bag.inspiration).order_by(Bag.inspiration, Bag.id).all()
+    
+    return jsonify([bag.to_dict() for bag in bags])
 @app.route('/bags/inspiration/<string:inspiration>', methods=['GET'])
 def get_bags_by_inspiration(inspiration):
     bags = Bag.query.filter_by(inspiration=inspiration).all()
