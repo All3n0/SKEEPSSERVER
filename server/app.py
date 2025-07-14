@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_mail import Mail, Message
 from config import create_app, db
-from models import Order, OrderItem, Bag, Cap, Tshirt
+from models import Order, OrderItem, Bag,Hoodie, Tshirt
 from auth.admin_auth import require_admin
 
 # Create app using factory
@@ -230,57 +230,46 @@ def delete_bag(bag_id):
     return jsonify({"message": "Bag deleted successfully!"})
 
 
-# ----------------------- Caps -----------------------
-@app.route('/caps', methods=['POST'])
-def create_cap():
-    data = request.get_json()
-    if 'inspiration' not in data:
-        return jsonify({"error": "Missing 'inspiration' key in request data"}), 400
-    
-    new_cap = Cap(
-        name=data['name'],
-        inspiration=data['inspiration'],
-        price=data['price'],
-        image=data['image']
+# ----------------------- Hoodies -----------------------
+
+
+@app.route('/hoodies', methods=['GET'])
+def get_hoodie_inspirations():
+    """Get all unique hoodie inspirations with their first image"""
+    inspirations = (
+        Hoodie.query.distinct(Hoodie.inspiration)
+        .group_by(Hoodie.inspiration)
+        .all()
     )
-    db.session.add(new_cap)
-    db.session.commit()
-    return jsonify({"message": "Cap created successfully!", "cap_id": new_cap.id}), 201
-
-
-@app.route('/caps', methods=['GET'])
-def get_caps():
-    caps = Cap.query.all()
     result = [
-        {"id": c.id, "name": c.name, "price": c.price, "image": c.image}
-        for c in caps
+        {
+            "inspiration": h.inspiration,
+            "image": h.image,  # Use the first image of this inspiration
+            "name": h.name,   # Include the name for display purposes
+            "price": float(h.price) if h.price else 0.00  # Ensure price is serializable
+        }
+        for h in inspirations
+    ]
+    return jsonify(result)
+
+@app.route('/hoodies/inspiration/<string:inspiration>', methods=['GET'])
+def get_hoodies_by_inspiration(inspiration):
+    """Get all hoodies matching a specific inspiration"""
+    hoodies = Hoodie.query.filter_by(inspiration=inspiration).all()
+    result = [
+        {
+            "id": h.id,
+            "name": h.name,
+            "price": float(h.price) if h.price else 0.00,
+            "image": h.image,
+            # "sizes": h.available_sizes.split(',') if h.available_sizes else []
+        }
+        for h in hoodies
     ]
     return jsonify(result)
 
 
-@app.route('/caps/<int:cap_id>', methods=['PUT'])
-def update_cap(cap_id):
-    data = request.get_json()
-    cap_item = Cap.query.get(cap_id)
-    if not cap_item:
-        return jsonify({"error": "Cap not found"}), 404
 
-    cap_item.name = data.get('name', cap_item.name)
-    cap_item.price = data.get('price', cap_item.price)
-    cap_item.image = data.get('image', cap_item.image)
-    db.session.commit()
-    return jsonify({"message": "Cap updated successfully!"})
-
-
-@app.route('/caps/<int:cap_id>', methods=['DELETE'])
-def delete_cap(cap_id):
-    cap_item = Cap.query.get(cap_id)
-    if not cap_item:
-        return jsonify({"error": "Cap not found"}), 404
-
-    db.session.delete(cap_item)
-    db.session.commit()
-    return jsonify({"message": "Cap deleted successfully!"})
 
 
 # ----------------------- T-Shirts -----------------------

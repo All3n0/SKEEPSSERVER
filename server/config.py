@@ -55,7 +55,7 @@ def create_app(config_name='default'):
     CORS(app)
 
     with app.app_context():
-        from models import Order, OrderItem, Bag, Cap, Tshirt
+        from models import Order, OrderItem, Bag,Hoodie, Tshirt
 
     return app
 

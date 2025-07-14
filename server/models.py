@@ -38,7 +38,7 @@ class Tshirt(db.Model):
     def __repr__(self):
         return f'<Tshirt {self.name}>'
 
-class Cap(db.Model):
+class Hoodie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     inspiration = db.Column(db.String(100), nullable=False)
@@ -46,7 +46,7 @@ class Cap(db.Model):
     image = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
-        return f'<Cap {self.name}>'
+        return f'<Hoodie {self.name}>'
 
 # Order Model
 class Order(db.Model):
