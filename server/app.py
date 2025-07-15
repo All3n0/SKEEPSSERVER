@@ -1,3 +1,4 @@
+import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -526,6 +527,29 @@ Skeeps Collection Team
         response = jsonify({"error": str(e)})
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response, 500
+@app.route('/custom-orders', methods=['GET'])
+def get_custom_orders():
+    orders = CustomOrder.query.order_by(CustomOrder.created_at.desc()).all()
+    return jsonify([order.to_dict() for order in orders])
+
+@app.route('/custom-orders/<int:order_id>', methods=['DELETE'])
+def delete_custom_order(order_id):
+    order = CustomOrder.query.get_or_404(order_id)
+    db.session.delete(order)
+    db.session.commit()
+    return jsonify({'message': 'Custom order deleted successfully'})
+
+@app.route('/custom-orders/stats', methods=['GET'])
+def custom_orders_stats():
+    total = CustomOrder.query.count()
+    recent = CustomOrder.query.filter(
+        CustomOrder.created_at >= datetime.datetime.now() - datetime.timedelta(days=7)
+    ).count()
+    
+    return jsonify({
+        'total': total,
+        'recent': recent
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
