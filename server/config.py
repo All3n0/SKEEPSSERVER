@@ -11,9 +11,9 @@ from sqlalchemy import MetaData
 
 def get_database_uri():
     """
-    Get database URI - Prioritizes Railway persistent storage if available
+    ALWAYS use /data/app.db on Railway, instance/app.db locally
     """
-    # If on Railway with persistent storage, use /data
+    # ALWAYS use /data on Railway - this is the persistent volume
     if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
         data_dir = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')
         # Ensure the directory exists
@@ -21,18 +21,9 @@ def get_database_uri():
             os.makedirs(data_dir, exist_ok=True)
         
         db_path = os.path.join(data_dir, "app.db")
-        
-        # Check if we need to migrate from old location
-        old_db_path = "instance/app.db"
-        if os.path.exists(old_db_path) and not os.path.exists(db_path):
-            print(f"📦 Migrating database from {old_db_path} to {db_path}")
-            import shutil
-            shutil.copy2(old_db_path, db_path)
-            print("✅ Database migrated to persistent storage")
-        
         return f'sqlite:///{db_path}'
     
-    # Local development - use instance/app.db
+    # Local development only
     return 'sqlite:///instance/app.db'
 
 
@@ -65,15 +56,12 @@ config = {
 def create_app(config_name='default'):
     app = Flask(__name__)
     
-    # Use the appropriate config
     env = os.environ.get('FLASK_ENV', config_name)
     config_obj = config.get(env, config['default'])
     app.config.from_object(config_obj)
     
-    # Set admin token
     app.config['ADMIN_TOKEN'] = os.environ.get('ADMIN_TOKEN', 'secret-token-123')
     
-    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     api.init_app(app)
@@ -81,12 +69,10 @@ def create_app(config_name='default'):
 
     with app.app_context():
         from models import Order, OrderItem, Bag, Hoodie, Tshirt
-        # Create tables if they don't exist
         db.create_all()
 
     return app
 
-# Instantiate extensions
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
