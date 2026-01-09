@@ -550,6 +550,334 @@ def custom_orders_stats():
         'total': total,
         'recent': recent
     })
+import json
+import os
+from datetime import datetime
+from flask import request, jsonify
+from auth.admin_auth import require_admin
 
+# Backup route - exports all data to JSON
+@app.route('/api/admin/export', methods=['POST'])
+
+def export_database():
+    """Export all database data to JSON backup file"""
+    try:
+        # Collect data from all tables
+        backup_data = {
+            'timestamp': datetime.now().isoformat(),
+            'bags': [bag.to_dict() for bag in Bag.query.all()],
+            'tshirts': [tshirt.to_dict() for tshirt in Tshirt.query.all()],
+            'hoodies': [{
+                'id': hoodie.id,
+                'name': hoodie.name,
+                'inspiration': hoodie.inspiration,
+                'price': hoodie.price,
+                'image': hoodie.image
+            } for hoodie in Hoodie.query.all()],
+            'orders': [order.to_dict() for order in Order.query.all()],
+            'custom_orders': [co.to_dict() for co in CustomOrder.query.all()]
+        }
+        
+        # Create backup filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'database_backup_{timestamp}.json'
+        
+        # Save to file (in Railway persistent storage if available)
+        if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
+            backup_dir = os.path.join(os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'), 'backups')
+        else:
+            backup_dir = 'backups'
+        
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        with open(backup_path, 'w') as f:
+            json.dump(backup_data, f, indent=2)
+        
+        # Also create a "latest" copy for auto-restore
+        latest_backup = os.path.join(backup_dir, 'latest_backup.json')
+        with open(latest_backup, 'w') as f:
+            json.dump(backup_data, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Database exported successfully. {len(backup_data["bags"])} bags, {len(backup_data["tshirts"])} tshirts, {len(backup_data["hoodies"])} hoodies, {len(backup_data["orders"])} orders, {len(backup_data["custom_orders"])} custom orders backed up.',
+            'backup_file': backup_path,
+            'stats': {
+                'bags': len(backup_data['bags']),
+                'tshirts': len(backup_data['tshirts']),
+                'hoodies': len(backup_data['hoodies']),
+                'orders': len(backup_data['orders']),
+                'custom_orders': len(backup_data['custom_orders'])
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Restore route - imports data from JSON backup
+@app.route('/api/admin/import', methods=['POST'])
+
+def import_database():
+    """Import database data from JSON backup file"""
+    try:
+        data = request.get_json()
+        
+        # Allow specifying a backup file, otherwise use latest
+        backup_dir = None
+        if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
+            backup_dir = os.path.join(os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'), 'backups')
+        else:
+            backup_dir = 'backups'
+        
+        backup_path = None
+        if data and data.get('backup_file'):
+            # Use specified backup file
+            backup_path = data.get('backup_file')
+        else:
+            # Use latest backup
+            latest_backup = os.path.join(backup_dir, 'latest_backup.json')
+            if os.path.exists(latest_backup):
+                backup_path = latest_backup
+            else:
+                # Find most recent backup
+                backup_files = [f for f in os.listdir(backup_dir) if f.startswith('database_backup_') and f.endswith('.json')]
+                if backup_files:
+                    backup_files.sort(reverse=True)
+                    backup_path = os.path.join(backup_dir, backup_files[0])
+        
+        if not backup_path or not os.path.exists(backup_path):
+            return jsonify({
+                'success': False,
+                'error': 'No backup file found. Please create a backup first or specify a backup file.'
+            }), 404
+        
+        # Read backup file
+        with open(backup_path, 'r') as f:
+            backup_data = json.load(f)
+        
+        # Clear existing data (optional - you might want to skip this)
+        clear_existing = data.get('clear_existing', True) if data else True
+        
+        if clear_existing:
+            print("Clearing existing data...")
+            # Delete all data while preserving tables
+            OrderItem.query.delete()
+            Order.query.delete()
+            CustomOrder.query.delete()
+            Bag.query.delete()
+            Tshirt.query.delete()
+            Hoodie.query.delete()
+            db.session.commit()
+        
+        # Restore Bags
+        bags_restored = 0
+        for bag_data in backup_data.get('bags', []):
+            # Check if bag already exists
+            existing_bag = Bag.query.filter_by(
+                name=bag_data['name'],
+                inspiration=bag_data.get('inspiration', '')
+            ).first()
+            
+            if not existing_bag:
+                new_bag = Bag(
+                    name=bag_data['name'],
+                    price=bag_data['price'],
+                    image=bag_data['image'],
+                    inspiration=bag_data.get('inspiration', '')
+                )
+                db.session.add(new_bag)
+                bags_restored += 1
+        
+        # Restore Tshirts
+        tshirts_restored = 0
+        for tshirt_data in backup_data.get('tshirts', []):
+            existing_tshirt = Tshirt.query.filter_by(
+                name=tshirt_data['name'],
+                inspiration=tshirt_data.get('inspiration', '')
+            ).first()
+            
+            if not existing_tshirt:
+                new_tshirt = Tshirt(
+                    name=tshirt_data['name'],
+                    price=tshirt_data['price'],
+                    image=tshirt_data['image'],
+                    inspiration=tshirt_data.get('inspiration', '')
+                )
+                db.session.add(new_tshirt)
+                tshirts_restored += 1
+        
+        # Restore Hoodies
+        hoodies_restored = 0
+        for hoodie_data in backup_data.get('hoodies', []):
+            existing_hoodie = Hoodie.query.filter_by(
+                name=hoodie_data['name'],
+                inspiration=hoodie_data.get('inspiration', '')
+            ).first()
+            
+            if not existing_hoodie:
+                new_hoodie = Hoodie(
+                    name=hoodie_data['name'],
+                    price=hoodie_data['price'],
+                    image=hoodie_data['image'],
+                    inspiration=hoodie_data.get('inspiration', '')
+                )
+                db.session.add(new_hoodie)
+                hoodies_restored += 1
+        
+        # Restore Orders (with their items)
+        orders_restored = 0
+        for order_data in backup_data.get('orders', []):
+            # Check if order already exists
+            existing_order = Order.query.filter_by(
+                customer_email=order_data['customer_email'],
+                customer_name=order_data['customer_name']
+            ).first()
+            
+            if not existing_order:
+                new_order = Order(
+                    customer_name=order_data['customer_name'],
+                    customer_email=order_data['customer_email'],
+                    instagram_handle=order_data.get('instagram_handle'),
+                    completed=order_data.get('completed', False)
+                )
+                db.session.add(new_order)
+                db.session.flush()  # Get the ID
+                
+                # Add order items
+                for item_data in order_data.get('items', []):
+                    order_item = OrderItem(
+                        order_id=new_order.id,
+                        product_type=item_data['product_type'],
+                        product_name=item_data.get('product_name', ''),
+                        quantity=item_data['quantity'],
+                        price=item_data['price']
+                    )
+                    db.session.add(order_item)
+                
+                orders_restored += 1
+        
+        # Restore Custom Orders
+        custom_orders_restored = 0
+        for co_data in backup_data.get('custom_orders', []):
+            existing_co = CustomOrder.query.filter_by(
+                email=co_data['email'],
+                name=co_data['name'],
+                created_at=datetime.fromisoformat(co_data['created_at'].replace('Z', '+00:00'))
+            ).first()
+            
+            if not existing_co:
+                new_co = CustomOrder(
+                    name=co_data['name'],
+                    email=co_data['email'],
+                    phone=co_data.get('phone'),
+                    project_type=co_data['project_type'],
+                    message=co_data['message'],
+                    created_at=datetime.fromisoformat(co_data['created_at'].replace('Z', '+00:00'))
+                )
+                db.session.add(new_co)
+                custom_orders_restored += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Database restored successfully from {backup_path}',
+            'backup_timestamp': backup_data.get('timestamp'),
+            'restored_counts': {
+                'bags': bags_restored,
+                'tshirts': tshirts_restored,
+                'hoodies': hoodies_restored,
+                'orders': orders_restored,
+                'custom_orders': custom_orders_restored
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Auto-backup and restore script for Railway redeploys
+@app.route('/api/admin/migrate-data', methods=['POST'])
+
+def migrate_data():
+    """
+    One-click solution for Railway redeploys:
+    1. Export current data to persistent storage
+    2. Can be called right before redeploy
+    """
+    try:
+        # Step 1: Export current data
+        export_response = export_database()
+        
+        # Parse the response
+        if export_response[0].json['success']:
+            backup_file = export_response[0].json['backup_file']
+            
+            # Step 2: Return instructions for restore
+            return jsonify({
+                'success': True,
+                'message': 'Data migration ready for redeploy',
+                'backup_file': backup_file,
+                'instructions': {
+                    '1': 'Run this export before redeploying on Railway',
+                    '2': 'After redeploy completes, call /api/admin/import',
+                    '3': 'Or use this curl command to restore:',
+                    'curl': f'curl -X POST {request.host_url}api/admin/import -H "Authorization: Bearer {app.config["ADMIN_TOKEN"]}"'
+                }
+            }), 200
+        else:
+            return export_response
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+@app.route('/api/admin/backups', methods=['GET'])
+
+def list_backups():
+    """List all available backup files"""
+    try:
+        if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
+            backup_dir = os.path.join(os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'), 'backups')
+        else:
+            backup_dir = 'backups'
+        
+        backups = []
+        if os.path.exists(backup_dir):
+            for filename in os.listdir(backup_dir):
+                if filename.endswith('.json'):
+                    filepath = os.path.join(backup_dir, filename)
+                    stat = os.stat(filepath)
+                    backups.append({
+                        'filename': filename,
+                        'path': filepath,
+                        'size': stat.st_size,
+                        'created': datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                        'modified': datetime.fromtimestamp(stat.st_mtime).isoformat()
+                    })
+        
+        # Sort by created date (newest first)
+        backups.sort(key=lambda x: x['created'], reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'backups': backups,
+            'backup_dir': backup_dir,
+            'total_backups': len(backups)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 if __name__ == '__main__':
     app.run(debug=True)

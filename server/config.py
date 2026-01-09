@@ -9,21 +9,33 @@ from flask_restful import Api
 from sqlalchemy import MetaData
 
 
+def get_database_uri():
+    """
+    Get database URI with Railway persistent storage support
+    """
+    # Check if we're on Railway with persistent storage
+    if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
+        # Railway persistent storage path
+        data_dir = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')
+        # Create directory if it doesn't exist
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir, exist_ok=True)
+        return f'sqlite:///{os.path.join(data_dir, "skeeps.db")}'
+    
+    # Fall back to environment variable or default
+    return os.environ.get('DATABASE_URI', 'sqlite:///app.db')
+
+
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'sqlite:///app.db')
+    SQLALCHEMY_DATABASE_URI = get_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your_secret_key')
     JSONIFY_PRETTYPRINT_REGULAR = False
-    JWT_ACCESS_TOKEN_EXPIRES = False  # Tokens will not expire for this example
+    JWT_ACCESS_TOKEN_EXPIRES = False
 
 class DevelopmentConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI','sqlite:///app.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'your_secret_key')
-    JSONIFY_PRETTYPRINT_REGULAR = False
-    JWT_ACCESS_TOKEN_EXPIRES = False  # Tokens will not expire for this example
-
+    SQLALCHEMY_ECHO = True  # Optional: show SQL queries in development
 
 class TestingConfig(Config):
     TESTING = True
@@ -32,7 +44,6 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
-ADMIN_TOKEN = "secret-token-123"  # Store securely in env variables in production
 
 config = {
     'development': DevelopmentConfig,
@@ -43,9 +54,13 @@ config = {
 
 def create_app(config_name='default'):
     app = Flask(__name__)
-    app.config.from_object(DevelopmentConfig)
     
-    # Set admin token here:
+    # Use the appropriate config based on FLASK_ENV
+    env = os.environ.get('FLASK_ENV', config_name)
+    config_obj = config.get(env, config['default'])
+    app.config.from_object(config_obj)
+    
+    # Set admin token
     app.config['ADMIN_TOKEN'] = os.environ.get('ADMIN_TOKEN', 'secret-token-123')
     
     # Initialize extensions
@@ -55,11 +70,13 @@ def create_app(config_name='default'):
     CORS(app)
 
     with app.app_context():
-        from models import Order, OrderItem, Bag,Hoodie, Tshirt
+        from models import Order, OrderItem, Bag, Hoodie, Tshirt
+        # Create tables if they don't exist
+        db.create_all()
 
     return app
 
-# Instantiate extensions (deferred to use with app factory)
+# Instantiate extensions
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
