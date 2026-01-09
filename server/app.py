@@ -550,6 +550,54 @@ def custom_orders_stats():
         'total': total,
         'recent': recent
     })
-
+@app.route('/all', methods=['GET'])
+def get_all_data():
+    """Get all data from all tables"""
+    try:
+        # Get all bags
+        bags = Bag.query.all()
+        # Get all tshirts
+        tshirts = Tshirt.query.all()
+        # Get all hoodies
+        hoodies = Hoodie.query.all()
+        # Get all orders with their items
+        orders = Order.query.all()
+        # Get all custom orders
+        custom_orders = CustomOrder.query.all()
+        
+        # Prepare response data
+        response_data = {
+            'success': True,
+            'timestamp': datetime.now().isoformat(),
+            'stats': {
+                'bags': len(bags),
+                'tshirts': len(tshirts),
+                'hoodies': len(hoodies),
+                'orders': len(orders),
+                'custom_orders': len(custom_orders),
+                'total_items': len(bags) + len(tshirts) + len(hoodies) + len(orders) + len(custom_orders)
+            },
+            'data': {
+                'bags': [bag.to_dict() for bag in bags],
+                'tshirts': [tshirt.to_dict() for tshirt in tshirts],
+                'hoodies': [{
+                    'id': hoodie.id,
+                    'name': hoodie.name,
+                    'inspiration': hoodie.inspiration,
+                    'price': hoodie.price,
+                    'image': hoodie.image
+                } for hoodie in hoodies],
+                'orders': [order.to_dict() for order in orders],
+                'custom_orders': [co.to_dict() for co in custom_orders]
+            }
+        }
+        
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 if __name__ == '__main__':
     app.run(debug=True)
