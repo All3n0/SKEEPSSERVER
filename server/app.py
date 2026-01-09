@@ -550,6 +550,10 @@ def custom_orders_stats():
         'total': total,
         'recent': recent
     })
+from datetime import datetime as dt  # Rename the import
+
+# ... your existing routes ...
+
 @app.route('/all', methods=['GET'])
 def get_all_data():
     """Get all data from all tables"""
@@ -568,7 +572,7 @@ def get_all_data():
         # Prepare response data
         response_data = {
             'success': True,
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': dt.now().isoformat(),
             'stats': {
                 'bags': len(bags),
                 'tshirts': len(tshirts),
