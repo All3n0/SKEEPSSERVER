@@ -879,5 +879,29 @@ def list_backups():
             'success': False,
             'error': str(e)
         }), 500
+@app.route('/api/admin/fix-db', methods=['POST'])
+def fix_database():
+    """Fix database location issue"""
+    try:
+        old_path = "instance/app.db"
+        new_path = "/data/app.db"
+        
+        if os.path.exists(old_path):
+            import shutil
+            shutil.copy2(old_path, new_path)
+            return jsonify({
+                'success': True,
+                'message': f'Copied database from {old_path} to {new_path}'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Old database not found at {old_path}'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 if __name__ == '__main__':
     app.run(debug=True)

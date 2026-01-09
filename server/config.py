@@ -11,19 +11,29 @@ from sqlalchemy import MetaData
 
 def get_database_uri():
     """
-    Get database URI with Railway persistent storage support
+    Get database URI - Prioritizes Railway persistent storage if available
     """
-    # Check if we're on Railway with persistent storage
+    # If on Railway with persistent storage, use /data
     if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
-        # Railway persistent storage path
         data_dir = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')
-        # Create directory if it doesn't exist
+        # Ensure the directory exists
         if not os.path.exists(data_dir):
             os.makedirs(data_dir, exist_ok=True)
-        return f'sqlite:///{os.path.join(data_dir, "skeeps.db")}'
+        
+        db_path = os.path.join(data_dir, "app.db")
+        
+        # Check if we need to migrate from old location
+        old_db_path = "instance/app.db"
+        if os.path.exists(old_db_path) and not os.path.exists(db_path):
+            print(f"📦 Migrating database from {old_db_path} to {db_path}")
+            import shutil
+            shutil.copy2(old_db_path, db_path)
+            print("✅ Database migrated to persistent storage")
+        
+        return f'sqlite:///{db_path}'
     
-    # Fall back to environment variable or default
-    return os.environ.get('DATABASE_URI', 'sqlite:///app.db')
+    # Local development - use instance/app.db
+    return 'sqlite:///instance/app.db'
 
 
 class Config:
@@ -35,7 +45,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = False
-    SQLALCHEMY_ECHO = True  # Optional: show SQL queries in development
+    SQLALCHEMY_ECHO = True
 
 class TestingConfig(Config):
     TESTING = True
@@ -55,7 +65,7 @@ config = {
 def create_app(config_name='default'):
     app = Flask(__name__)
     
-    # Use the appropriate config based on FLASK_ENV
+    # Use the appropriate config
     env = os.environ.get('FLASK_ENV', config_name)
     config_obj = config.get(env, config['default'])
     app.config.from_object(config_obj)

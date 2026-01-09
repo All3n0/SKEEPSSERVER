@@ -15,7 +15,23 @@ def main():
     print(f"🔄 Pre-deploy backup starting for {service_url}")
     
     try:
+        # First, try to fix database location if needed
+        print("🔧 Checking database location...")
+        fix_response = requests.post(
+            f"{service_url}/api/admin/fix-db",
+            headers={'Authorization': f'Bearer {admin_token}'},
+            timeout=10
+        )
+        
+        if fix_response.status_code == 200:
+            print(f"✅ {fix_response.json().get('message')}")
+        elif fix_response.status_code == 404:
+            print(f"ℹ️  Database already in correct location or not found")
+        else:
+            print(f"⚠️  Could not fix database: {fix_response.text}")
+        
         # Create backup
+        print("💾 Creating backup...")
         response = requests.post(
             f"{service_url}/api/admin/backup",
             headers={'Authorization': f'Bearer {admin_token}'},
